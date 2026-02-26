@@ -1,0 +1,47 @@
+# COLOR_MAP 업데이트 함수 추가
+code = '''
+
+/**
+ * 색상코드 매핑 업데이트
+ * 외부 시트에서 색상 매핑 데이터를 읽어 스크립트 속성에 저장
+ */
+function updateColorCodeMap() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 색상코드 매핑: 외부 시트 V1:Y150
+  // 키: V열, 값: Y열
+  var externalUrl = "https://docs.google.com/spreadsheets/d/1hJtGVXCQxVOcGVe6w8Yk8UGEXZq0p_2wm13u7fzFYIw/edit";
+  
+  try {
+    var externalSS = SpreadsheetApp.openByUrl(externalUrl);
+    var externalSheet = externalSS.getSheets()[0];
+    var data = externalSheet.getRange("V1:Y150").getValues();
+    
+    var colorMap = {};
+    var count = 0;
+    
+    for (var i = 0; i < data.length; i++) {
+      var key = data[i][0]; // V열
+      var value = data[i][3]; // Y열
+      
+      if (key && key.toString().trim() !== "" && value) {
+        var k = key.toString().trim();
+        var v = value.toString().trim();
+        colorMap[k] = v;
+        count++;
+      }
+    }
+    
+    PropertiesService.getScriptProperties().setProperty("COLOR_MAP", JSON.stringify(colorMap));
+    SpreadsheetApp.getUi().alert("✅ 색상코드 업데이트 완료! " + count + "건");
+    
+  } catch (e) {
+    SpreadsheetApp.getUi().alert("❌ 외부 시트 접근 오류: " + e.message);
+  }
+}
+'''
+
+with open(r'c:\Users\DSAI\Desktop\이비즈\door.gs', 'a', encoding='utf-8') as f:
+    f.write(code)
+
+print("✅ updateColorCodeMap 함수 추가 완료!")

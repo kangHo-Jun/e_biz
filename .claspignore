@@ -1,0 +1,13 @@
+*.py
+fix_*.py
+create_*.py
+add_*.py
+*.md
+README.md
+door_v0.gs
+door_v1.gs
+door_v2.gs
+door_v3.gs
+door_clean.gs
+cleanup_door.py
+remove_duplicate_onedit.py
