@@ -500,7 +500,7 @@ function 생성_품목명(ap, aw, ax, as, at, av, aq, row) {
      var finalColor = color.startsWith("영림") ? color : co + color;
      var finalP = 품명_전처리_문짝(p, as + "*" + at + "*" + av);
      var sk = (aq && (aq.toString().includes("3방") || aq.toString().includes("식기무"))) ? "식기무" : (aq && aq.toString().includes("식기유") ? "식기유" : "");
-     return finalColor + " " + finalP + " " + as + "*" + at + "*" + av + sk;
+     return finalColor + " " + finalP + " " + at + "*" + av + sk;
   }
   var co = (ap && ap.toString().includes("영림")) ? "영림" : "영림";
   var color = 색상_전처리(aw, ax);
@@ -525,7 +525,7 @@ function 품명_전처리(ap) {
 
 function 생성_품목코드_NEW(ap, aw, ax, as, at, av, aq, row) {
   var bc = 브랜드색상코드_생성(aw, ax), t = 구분_품목타입(ap, row), mid = "", spec = "";
-  if (t === 'DOOR') { mid = 모델코드_생성(ap); spec = "" + 추출_숫자_from문자열(as) + at + av; }
+  if (t === 'DOOR') { mid = 모델코드_생성(ap); spec = "" + at + av; }
   else { mid = 플래그코드_생성(ap); spec = 규격코드_생성(as, at, av, aq); }
   return bc + mid + spec;
 }
