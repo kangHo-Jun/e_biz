@@ -249,7 +249,8 @@ const CONFIG = {
   DOOR_START: 30,
   DOOR_END: 42,
   COLS: {
-    AP: 42, AQ: 43, AR: 44, AS: 45, AT: 46, AW: 47, AX: 48, BA: 51
+    AP: 42, AQ: 43, AR: 44, AS: 45, AT: 46, AU: 47, AV: 48, AY: 51
+    // AU=색상명, AV=색상코드, AY=가스켓 (셀병합 후 실제 열 문자 기준)
   }
 };
 
@@ -283,7 +284,7 @@ function 계산_영림발주서_가격_내부() {
   var aRange = 발주서시트.getRange(startRow, 1, numRows, 1);
   var aValues = aRange.getValues();
   var aNotes = aRange.getNotes();
-  var dataValues = 발주서시트.getRange(startRow, CONFIG.COLS.AP, numRows, CONFIG.COLS.BA - CONFIG.COLS.AP + 1).getValues();
+  var dataValues = 발주서시트.getRange(startRow, CONFIG.COLS.AP, numRows, CONFIG.COLS.AY - CONFIG.COLS.AP + 1).getValues();
   
   var resultPrices = [], resultNotes = [];
   var 성공 = 0, 실패 = 0;
@@ -292,9 +293,9 @@ function 계산_영림발주서_가격_내부() {
     var currentRow = startRow + i;
     var rowData = dataValues[i];
     var ap = rowData[0], aq = rowData[1], ar = rowData[2], as = rowData[3], atRaw = rowData[4],
-        aw = rowData[5], ax = rowData[6], ba = rowData[9];
+        au = rowData[5], av = rowData[6], ay = rowData[9]; // AU=색상명, AV=색상코드, AY=가스켓
     var parsed = parseAT(atRaw);
-    var at = parsed.width, av = parsed.height;
+    var at = parsed.width, atHeight = parsed.height; // atHeight: AT 높이 (av와 구분)
     var curP = aValues[i][0], curN = aNotes[i][0];
 
     if (!atRaw) { resultPrices.push([curP]); resultNotes.push([curN]); 실패++; continue; }
@@ -313,16 +314,16 @@ function 계산_영림발주서_가격_내부() {
     
     if (success) {
         var extra = false;
-        if (currentRow <= CONFIG.FRAME_END && ba && !["없음","단종","단종예정"].includes(ba.toString().trim())) finalP += 5500;
-        if (currentRow >= CONFIG.DOOR_START && aw) {
-            var kw = aw.toString().trim().toUpperCase();
+        if (currentRow <= CONFIG.FRAME_END && ay && !["없음","단종","단종예정"].includes(ay.toString().trim())) finalP += 5500;
+        if (currentRow >= CONFIG.DOOR_START && au) {
+            var kw = au.toString().trim().toUpperCase();
             var added = findPriceFromMap_Scan(kw, testData.additionalPriceMap, testData.additionalPriceInfo);
             if (added !== null) { finalP += added; extra = true; }
         }
         if (currentRow >= CONFIG.DOOR_START && (aq?aq.toString().toUpperCase():"").includes("Y")) {
-            var target = ((aw?aw.toString():"") + " " + (ax?ax.toString():"")).toUpperCase();
+            var target = ((au?au.toString():"") + " " + (av?av.toString():"")).toUpperCase();
             var doorP = findDoorPrice_Scan(target, testData.doorPriceMap);
-            if (doorP > 0 && av >= 2166) finalP += doorP;
+            if (doorP > 0 && atHeight >= 2166) finalP += doorP;
         }
         resultPrices.push([finalP]);
         resultNotes.push([(manual && extra) ? "✅추가금반영됨" : curN]);
@@ -454,7 +455,7 @@ function 생성_품목코드_문틀_내부() {
   var sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
   if (!sheet) throw new Error('시트 없음');
   var start = CONFIG.START_ROW, num = CONFIG.END_ROW - start + 1;
-  var data = sheet.getRange(start, CONFIG.COLS.AP, num, CONFIG.COLS.BA - CONFIG.COLS.AP + 1).getValues();
+  var data = sheet.getRange(start, CONFIG.COLS.AP, num, CONFIG.COLS.AY - CONFIG.COLS.AP + 1).getValues();
   
   var names = [], codes = [], empty = [], units = [];
   var 성공 = 0, 실패 = 0;
@@ -477,6 +478,7 @@ function 생성_품목코드_문틀_내부() {
 
     try {
       var _p2 = parseAT(row[4]);
+      // row[5]=AU(색상명), row[6]=AV(색상코드), row[9]=AY(가스켓)
       var n = 생성_품목명(row[0], row[5], row[6], row[3], _p2.width, _p2.height, row[1], rIdx);
       var c = 생성_품목코드_NEW(row[0], row[5], row[6], row[3], _p2.width, _p2.height, row[1], rIdx);
       names.push([n]); codes.push([c]); empty.push([""]); units.push([rIdx >= CONFIG.DOOR_START ? "짝" : "틀"]); 성공++;
@@ -517,6 +519,7 @@ function 색상_전처리(aw, ax) {
   if (!comb) return "";
   if (/^(영림\d+)\s+(PS\d+|[A-Z]+\d+)$/i.test(comb)) return comb.replace(/\s+/g, '');
   if (/^(영림\d+)\s+[가-힣]+$/.test(comb)) return comb.match(/영림\d+/)[0];
+  if (/^([A-Z]+\d+(?:-\d+)*)\s+[가-힣].*$/i.test(comb)) return comb.match(/^([A-Z]+\d+(?:-\d+)*)/i)[1];
   if (/^[가-힣\s]+$/.test(comb)) return comb.replace(/\s+/g, '');
   return comb.replace(/영림|우딘|예림/g, '').trim();
 }
@@ -536,9 +539,10 @@ function 생성_품목코드_NEW(ap, aw, ax, as, at, av, aq, row) {
 function 브랜드색상코드_생성(aw, ax) {
   var s1 = aw ? aw.toString().trim() : "", s2 = ax ? ax.toString().trim() : "", c = (s1 && s2) ? s1 + s2 : (s1 || s2 || "");
   if (!c) throw new Error("색상 없음");
-  var m1 = c.match(/영림(\d+)PS\d+/); if (m1) return "Y" + m1[1];
-  var m2 = c.match(/PS([A-Z]+\d+)/i); if (m2) return "YS" + m2[1];
-  var m3 = c.match(/영림(\d+)/); if (m3) return "Y" + m3[1];
+  var compact = c.replace(/\s+/g, '');
+  var m1 = compact.match(/영림(\d+)PS\d+/i); if (m1) return "Y" + m1[1];
+  var m3 = compact.match(/영림(\d+)/); if (m3) return "Y" + m3[1];
+  var m2 = compact.match(/P([A-Z]+\d+(?:-\d+)*)/i); if (m2) return "Y" + m2[1].replace(/-/g, '');
   if (/^[가-힣]+$/.test(c)) return "Y" + c.substring(0, 2);
   var m5 = c.match(/(\d+)/); if (m5) return "Y" + m5[1];
   throw new Error("코드생성 실패");
@@ -592,6 +596,81 @@ function 전체_실행() {
 }
 
 // ============================================
+// 3-1. AS열 드롭다운 자동설정
+// ============================================
+
+/**
+ * AP(제품명) 기반으로 테스트 시트 헤더(1행)를 탐색하여
+ * 해당 열(2~40행)의 규격 목록을 AS셀 드롭다운으로 설정한다.
+ * @param {Sheet} sheet - 영림발주서 시트
+ * @param {number} row  - 대상 행 번호
+ * @param {string} apValue - AP셀 값 (제품명)
+ */
+function setASDropdown(sheet, row, apValue) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var testSheet = ss.getSheetByName(CONFIG.TEST_SHEET_NAME);
+    var asCell = sheet.getRange(row, CONFIG.COLS.AS);
+
+    if (!testSheet) {
+      Logger.log("[setASDropdown] 테스트 시트 없음");
+      return;
+    }
+
+    // 1. 테스트 시트 1행 헤더 읽기 (A1:G1)
+    var headers = testSheet.getRange("A1:G1").getValues()[0];
+    var apStr = apValue ? apValue.toString().toUpperCase() : "";
+
+    if (!apStr) {
+      asCell.clearDataValidations();
+      return;
+    }
+
+    // 2. 헤더에서 AP값 포함 매칭 탐색
+    var matchCol = -1;
+    for (var c = 0; c < headers.length; c++) {
+      var h = headers[c] ? headers[c].toString().toUpperCase().trim() : "";
+      if (h && apStr.includes(h)) {
+        matchCol = c;
+        break;
+      }
+    }
+
+    Logger.log("[setASDropdown] 행" + row + " AP=[" + apStr + "] → matchCol=" + matchCol);
+
+    if (matchCol === -1) {
+      // 매칭 없음 → 드롭다운 제거
+      asCell.clearDataValidations();
+      return;
+    }
+
+    // 3. 해당 열의 2~40행 데이터 추출
+    var colLetter = String.fromCharCode(65 + matchCol); // 0=A, 1=B ...
+    var listValues = testSheet.getRange(colLetter + "2:" + colLetter + "40")
+      .getValues()
+      .flat()
+      .filter(function(v) { return v !== "" && v !== null && v !== undefined; })
+      .map(function(v) { return v.toString(); });
+
+    if (listValues.length === 0) {
+      asCell.clearDataValidations();
+      return;
+    }
+
+    // 4. AS셀에 드롭다운 설정
+    var rule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(listValues, true)
+      .setAllowInvalid(true)
+      .build();
+    asCell.setDataValidation(rule);
+
+    Logger.log("[setASDropdown] 행" + row + " → " + listValues.length + "개 목록 드롭다운 설정 완료");
+  } catch (err) {
+    Logger.log("[setASDropdown] Error: " + err.message);
+  }
+}
+
+// ============================================
 // 4. 버튼 관리
 // ============================================
 
@@ -600,23 +679,23 @@ function 시트에_버튼_만들기() {
   if (!sheet) return;
   if (시트_버튼_찾기()) { if (SpreadsheetApp.getUi().alert('버튼 재생성', '기존 버튼을 삭제하고 새로 만들까요?', SpreadsheetApp.getUi().ButtonSet.YES_NO) === SpreadsheetApp.getUi().Button.YES) 시트_버튼_삭제(); else return; }
   
-  var r = sheet.getRange("BA1:BC1");
-  r.merge().setHorizontalAlignment("center").setVerticalAlignment("middle").setValue("📦 품목코드 생성 (BA2 클릭)").setBackground("#4285f4").setFontColor("#ffffff").setFontWeight("bold");
-  sheet.getRange("BA2").insertCheckboxes();
-  sheet.getRange("BB2:BC2").merge().setValue("← 체크하면 자동 실행").setFontColor("#666666").setFontSize(10);
+  var r = sheet.getRange("AY1:BA1");
+  r.merge().setHorizontalAlignment("center").setVerticalAlignment("middle").setValue("📦 품목코드 생성 (AY2 클릭)").setBackground("#4285f4").setFontColor("#ffffff").setFontWeight("bold");
+  sheet.getRange("AY2").insertCheckboxes();
+  sheet.getRange("AZ2:BA2").merge().setValue("← 체크하면 자동 실행").setFontColor("#666666").setFontSize(10);
   
-  SpreadsheetApp.getUi().alert('✅ 버튼 생성 완료\n\nAW열 색상 입력 전 상단 메뉴 [🔄 데이터 업데이트]를 꼭 실행해주세요!');
+  SpreadsheetApp.getUi().alert('✅ 버튼 생성 완료\n\nAU열 색상 입력 전 상단 메뉴 [🔄 데이터 업데이트]를 꼭 실행해주세요!');
 }
 
 function 시트_버튼_찾기() {
-  try { var v = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAME).getRange("BA1").getValue(); return (v && v.toString().includes("품목코드 생성")) ? true : false; } catch(e) { return false; }
+  try { var v = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAME).getRange("AY1").getValue(); return (v && v.toString().includes("품목코드 생성")) ? true : false; } catch(e) { return false; }
 }
 
 function 시트_버튼_삭제() {
   var s = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.SHEET_NAME);
-  var r = s.getRange("BA1:BC1"); if(r.isPartOfMerge()) r.breakApart(); r.clear().setBackground(null);
-  s.getRange("BA2").clear();
-  var r2 = s.getRange("BB2:BC2"); if(r2.isPartOfMerge()) r2.breakApart(); r2.clear();
+  var r = s.getRange("AY1:BA1"); if(r.isPartOfMerge()) r.breakApart(); r.clear().setBackground(null);
+  s.getRange("AY2").clear();
+  var r2 = s.getRange("AZ2:BA2"); if(r2.isPartOfMerge()) r2.breakApart(); r2.clear();
 }
 
 /**
@@ -682,42 +761,56 @@ function onEdit(e) {
       return;
     }
     
-    if (r.getA1Notation() === "BA2" && val === true) { 
+    if (r.getA1Notation() === "AY2" && val === true) { 
       생성_품목코드_문틀(); r.setValue(false); return; 
     }
     
-    if (colS === 1 || colS === CONFIG.COLS.AW || colS === CONFIG.COLS.AT) { 
+    if (colS === 1 || colS === CONFIG.COLS.AU || colS === CONFIG.COLS.AT) { 
       for(var i=rowS; i<=r.getLastRow(); i++) if(i>=CONFIG.START_ROW && i<=CONFIG.END_ROW) s.getRange(i,1).clearNote(); 
     }
     
-    // AT(병합셀) 또는 AW(색상) 수정 시 실행
-    if (colS === CONFIG.COLS.AW || colS === CONFIG.COLS.AT) {
-       Logger.log("[onEdit] 처리 대상 열(AT/AW) 수정됨");
+    // AP(제품명) 수정 시 → AS열 드롭다운 자동설정 (문틀 범위만)
+    if (colS === CONFIG.COLS.AP) {
+      Logger.log("[onEdit] AP열 수정 → AS 드롭다운 설정 시작");
+      var apVal = r.getValue();
+      for (var i = rowS; i <= r.getLastRow(); i++) {
+        if (i < CONFIG.START_ROW || i > CONFIG.FRAME_END) continue;
+        setASDropdown(s, i, apVal);
+      }
+    }
+
+    // AT(병합셀) 또는 AU(색상명) 수정 시 실행
+    if (colS === CONFIG.COLS.AU || colS === CONFIG.COLS.AT) {
+       Logger.log("[onEdit] 처리 대상 열(AT/AU) 수정됨");
        var props = PropertiesService.getScriptProperties();
        var cMap = JSON.parse(props.getProperty("COLOR_MAP")||"{}"), gMap = JSON.parse(props.getProperty("GASKET_COLOR_MAP")||"{}");
        
        for (var i = rowS; i <= r.getLastRow(); i++) {
           if (i < CONFIG.START_ROW || i > CONFIG.END_ROW) continue;
           
-          var k = s.getRange(i, CONFIG.COLS.AW).getValue().toString().trim(), axV = "";
-          var atValRaw = s.getRange(i, CONFIG.COLS.AT).getValue();
+          var k = s.getRange(i, CONFIG.COLS.AU).getValue().toString().trim(), avV2 = "";
+          // AT(병합셀) 직접 편집 시 getValue()가 빈 값을 반환하는 타이밍 문제 방지:
+          // 이벤트로 변경된 행(rowS)이고 AT열 편집인 경우, e.value를 우선 사용
+          var atValRaw = (colS === CONFIG.COLS.AT && i === rowS && e.value !== undefined)
+            ? e.value
+            : s.getRange(i, CONFIG.COLS.AT).getValue();
           var _pEdit = parseAT(atValRaw);
-          var avV = _pEdit.height;
+          var heightV = _pEdit.height;
           
-          Logger.log("[onEdit] 행 " + i + " 처리중 - 색상(AW): '" + k + "', 높이: " + avV + " (원본AT: " + atValRaw + ")");
+          Logger.log("[onEdit] 행 " + i + " 처리중 - 색상명(AU): '" + k + "', 높이: " + heightV + " (원본AT: " + atValRaw + ")");
           
-          // 1. AX열 (색상코드) 자동완성 (AW 수정 시)
-          if (colS === CONFIG.COLS.AW && k) {
+          // 1. AV열 (색상코드) 자동완성 (AU 수정 시)
+          if (colS === CONFIG.COLS.AU && k) {
              var res = cMap[k] || cMap[k.replace(/\s+/g,'')];
              if (!res) for (var mK in cMap) if (mK.includes(k) || k.includes(mK)) { res = cMap[mK]; break; }
-             if (res) { s.getRange(i, CONFIG.COLS.AX).setValue(res); axV = res; }
+             if (res) { s.getRange(i, CONFIG.COLS.AV).setValue(res); avV2 = res; }
           } else {
-             axV = s.getRange(i, CONFIG.COLS.AX).getValue().toString().trim();
+             avV2 = s.getRange(i, CONFIG.COLS.AV).getValue().toString().trim();
           }
 
-          // 2. BA열 가스켓 (12-20행)
+          // 2. AY열 가스켓 (12~FRAME_END행)
           if (i <= CONFIG.FRAME_END && k) {
-             var targets = [k]; if(axV) targets.push(axV);
+             var targets = [k]; if(avV2) targets.push(avV2);
              var found = null;
              ['M','P','S'].forEach(function(g){
                 if(found) return;
@@ -725,16 +818,16 @@ function onEdit(e) {
                    targets.forEach(function(t){ if(found) return; if(dK===t||dK.includes(t)||t.includes(dK)) found=gMap[g][dK]; });
                 }
              });
-             if(found) s.getRange(i, CONFIG.COLS.BA).setValue(found.isDiscontinued ? found.status : found.gasketColor);
+             if(found) s.getRange(i, CONFIG.COLS.AY).setValue(found.isDiscontinued ? found.status : found.gasketColor);
           }
           
-          // 3. AQ열 인필 방향 (22-35행)
+          // 3. AQ열 인필 방향 (DOOR_START~이상)
           if (i >= CONFIG.DOOR_START) {
-             if (avV >= 2166 && k) {
+             if (heightV >= 2166 && k) {
                 var test = e.source.getSheetByName("테스트");
                 if (test) {
                    var ag = test.getRange("AG1:AG300").getValues(), ah = test.getRange("AH1:AH300").getValues();
-                   var sk = [k.toUpperCase()]; if(axV) sk.push(axV.toUpperCase());
+                   var sk = [k.toUpperCase()]; if(avV2) sk.push(avV2.toUpperCase());
                    
                    var isY = ah.some(function(row){ 
                      var v = (row[0]||"").toString().toUpperCase().trim(); 
