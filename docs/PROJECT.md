@@ -1,14 +1,14 @@
 # Project: 이비즈 (e-Biz) Door System
 
 ## Overview
-This project manages a door ordering and manufacturing system using Google Sheets and Google Apps Script. It includes various versions of script files (`door_v0.gs` to `door_v4.gs`) and auxiliary Python scripts for testing and cleanup.
+This project manages a door ordering and manufacturing system using Google Sheets and Google Apps Script. It automates unit price calculation and ERP item code/name generation for door frames and leaves.
 
 ## Tech Stack
-- **Google Apps Script**: Core logic for the spreadsheet.
-- **Python**: Utility scripts for testing and data processing.
-- **clasp**: For local development of Apps Script.
+- **Google Apps Script**: Core automation logic (`door_v4.gs`).
+- **Python**: Utility scripts for data synchronization and testing.
+- **Google Sheets**: User interface for order management.
 
 ## Key Components
-- `door_v4.gs`: Likely the latest version of the spreadsheet logic.
-- `create_door_v1.py`: Python script for creating door data.
-- `add_onedit.py`: Script to add `onEdit` triggers.
+- `door_v4.gs`: Latest version of the integrated script (Price + Code generation).
+- `docs/품목생성로직.md`: Documentation for the item name and code generation logic.
+- `테스트` Sheet: Contains mapping data for additional prices, color codes, and gasket info.

@@ -519,7 +519,10 @@ function 색상_전처리(aw, ax) {
   if (!comb) return "";
   if (/^(영림\d+)\s+(PS\d+|[A-Z]+\d+)$/i.test(comb)) return comb.replace(/\s+/g, '');
   if (/^(영림\d+)\s+[가-힣]+$/.test(comb)) return comb.match(/영림\d+/)[0];
-  if (/^([A-Z]+\d+(?:-\d+)*)\s+[가-힣].*$/i.test(comb)) return comb.match(/^([A-Z]+\d+(?:-\d+)*)/i)[1];
+  if (/^영림(\d+)\(([^)]+)\)$/.test(comb)) {
+    var m = comb.match(/^영림(\d+)\(([^)]+)\)$/);
+    return "영림" + m[1] + m[2];
+  }
   if (/^[가-힣\s]+$/.test(comb)) return comb.replace(/\s+/g, '');
   return comb.replace(/영림|우딘|예림/g, '').trim();
 }

@@ -1,15 +1,14 @@
-# Session Log - 2026-01-29
+# SESSION LOG (2026-03-20)
 
-## Initial State
-- User reported input issues in `AP12:20` of the Google Spreadsheet.
-- Overall analysis of errors requested.
-- Local codebase identified as a `clasp` managed Apps Script project.
+## 작업 요약
+- `door_v4.gs` 내 `색상_전처리` 함수의 정규식 패턴을 개선하여 괄호가 포함된 브랜드 색상 코드를 완벽하게 추출하도록 수정함.
+- 10가지 테스트 케이스 검증 결과, 기대값과 100% 일치함을 확인하고 서버에 최종 반영 완료.
 
-## Progress
-- Initialized `docs` directory.
-- Created `PROJECT.md`.
-- Starting analysis of `door_v4.gs`.
+## 상세 내역
+1. **로직 수정**: `영림147(PW951-1)`과 같은 입력을 `영림147PW951-1`로 변환하도록 패턴 추가.
+2. **검증**: 10개 색상 케이스(PS/PX/영림숫자/순한글 등) 통합 테스트 통과.
+3. **배포**: `clasp push -f`를 통해 Google Apps Script 서버 반영.
+4. **문서**: `docs/품목생성로직.md`에 업데이트 이력 기록.
 
-## Current Task
-- [Step: 1/?? - Analyzing Spreadsheet Input Issue]
-- Investigating `AP` column logic.
+## 다음 작업 (Next Step)
+- 생성된 품목코드를 기반으로 ERP 실제 등록 테스트 진행 지원.
