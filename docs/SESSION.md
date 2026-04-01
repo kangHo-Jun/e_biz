@@ -17,8 +17,10 @@
 ### 2026-04-01 (3rd Update: 배포 완료)
 - **CLASP 배포**: `clasp push -f`를 통해 `door_v4.gs` 수정 사항을 Google Apps Script 서버에 최종 반영 완료.
 - **배포 확인**: Pushed 2 files (dist/appsscript.json, door_v4.gs) 확인됨.
-### 2026-04-01 (4th Update: 자동화 반영)
-- **onEdit() 수정**: AZ열(52번 열, 12~30행) 수정 시 `생성_문짝치수()`가 자동 호출되도록 로직 추가.
+### 2026-04-01 (5th Update: 연산 로직 세분화)
+- **생성_문짝치수() 수정**: B값(높이) 계산 로직을 3방/4방 및 AZ값 존재 여부에 따라 세분화.
+    - 3방 OR (4방 & AZ 미입력) → B - 65
+    - 4방 & AZ 입력 → B - (30 + AZ)
 - **배포**: `clasp push -f`를 통해 서버 반영 완료.
 
 ---

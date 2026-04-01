@@ -685,8 +685,8 @@ function 진단_문짝치수() {
     log += "Row " + r + ": AT=[" + atRaw + "] -> " + parsed.width + "*" + parsed.height + ", AQ=[" + aq + "], AZ=[" + az + "] (" + (typeof az) + ")\n";
     
     // 로직 테스트 (미리보기)
-    if (aq === "3방") {
-      log += "  -> 3방 연산 예상: " + (parsed.width - 68) + " * " + (parsed.height - 65) + "\n";
+    if (aq === "3방" || (aq === "4방" && (az === "" || az === null || az === undefined))) {
+      log += "  -> 연산 예상: " + (parsed.width - 68) + " * " + (parsed.height - 65) + "\n";
     } else if (aq === "4방") {
       var azNum = Number(az) || 0;
       log += "  -> 4방 연산 예상: " + (parsed.width - 68) + " * " + (parsed.height - (30 + azNum)) + "\n";
@@ -730,7 +730,7 @@ function 생성_문짝치수() {
     var finalW = parsed.width - 68;
     var finalH = "";
 
-    if (aq === "3방") {
+    if (aq === "3방" || (aq === "4방" && (dataAZ[i][0] === "" || dataAZ[i][0] === null || dataAZ[i][0] === undefined))) {
       finalH = parsed.height - 65;
       results.push([finalW + "*" + finalH]);
     } else if (aq === "4방") {
