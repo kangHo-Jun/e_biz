@@ -482,7 +482,13 @@ function 색상_전처리(aw, ax) {
   return comb.replace(/영림|우딘|예림/g, '').trim();
 }
 
-function 품명_전처리(ap) { if (!ap) return ""; return ap.toString().replace(/^영림ㅣ/, '').replace(/ㅣ/g, ' ').replace(/문틀|형/g, '').replace(/\d+바/g, '').replace(/\(식기[XO]\)/g, '').trim().replace(/\s+/g, ' '); }
+function 품명_전처리(ap) {
+  if (!ap) return "";
+  var raw = ap.toString();
+  var result = raw.replace(/^영림ㅣ/, '').replace(/ㅣ/g, ' ').replace(/문틀|형/g, '').replace(/\d+바/g, '').replace(/\(식기[XO]\)/g, '').trim().replace(/\s+/g, ' ');
+  if (raw.includes('발포') && raw.includes('슬림') && (raw.includes('12T(MDF)') || raw.includes('9T(PVC)'))) result = result.replace('슬림', '와이드');
+  return result;
+}
 
 function 생성_품목코드_NEW(ap, aw, ax, as, at, av, aq, row) {
   var bc = 브랜드색상코드_생성(aw, ax), t = 구분_품목타입(ap, row), mid = "", spec = "";
@@ -509,6 +515,8 @@ function 플래그코드_생성(ap) {
   for(var k in headMap) { if(s.indexOf(k)!==-1) { head = headMap[k]; break; } }
   var tail = "", tailMap = {"슬림":"S","와이드":"W","분리":"D","히든":"H","미서기":"L"};
   for(var k in tailMap) { if(s.indexOf(k)!==-1) tail += tailMap[k]; }
+  var hasMDFSpec = s.some(function(k){ return k === '12T(MDF)' || k === '9T(PVC)'; });
+  if (head === 'B' && tail.indexOf('S') !== -1 && hasMDFSpec) tail = tail.replace('S', 'W');
   return head + tail;
 }
 
