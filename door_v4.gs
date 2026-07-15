@@ -541,8 +541,8 @@ function 브랜드색상코드_생성(aw, ax) {
 function 플래그코드_생성(ap) {
   var s = ap.toString().replace(/^영림ㅣ/, '').split('ㅣ').map(function(k){ return k.replace(/형/g, '').trim(); });
   var yNum = null; s.forEach(function(k){ var m = k.match(/(\d+)연동/); if(m) yNum = m[1]; });
-  var head = "", headMap = {"발포":"B","방염":"F","비방염":"N","알루미늄":"A","프레임몰딩":"P"};
-  for(var k in headMap) { if(s.indexOf(k)!==-1) { head = headMap[k]; break; } }
+  var head = "", headMap = {"발포":"B","비방염":"N","방염":"F","알루미늄":"A","프레임몰딩":"P","스텝도어":"T","무메":"M","목재":"W"};
+  for(var k in headMap) { if(s.some(function(t){ return t.indexOf(k) !== -1; })) { head = headMap[k]; break; } }
   var tail = "", tailMap = {"슬림":"S","와이드":"W","분리":"D","히든":"H","미서기":"L"};
   for(var k in tailMap) {
     if(s.some(function(t){ return t.indexOf(k) !== -1; })) tail += tailMap[k];
@@ -551,8 +551,7 @@ function 플래그코드_생성(ap) {
     if(s.indexOf("PVC") !== -1) tail += "P";
     if(s.indexOf("MDF") !== -1) tail += "M";
   }
-  var wood = s.indexOf("목재") !== -1 ? "W" : "";
-  return wood + head + tail;
+  return head + tail;
 }
 
 function 규격코드_생성(as, at, av, aq) {
@@ -563,7 +562,7 @@ function 규격코드_생성(as, at, av, aq) {
 function 구분_품목타입(itemName, row) { 
   if (row >= CONFIG.DOOR_START && row <= CONFIG.DOOR_END) return 'DOOR';
   var s = itemName ? itemName.toString() : "";
-  if (['문틀','발포','분리형','스토퍼','슬림형','와이드형'].some(function(k){ return s.includes(k); })) return 'FRAME';
+  if (['문틀','발포','분리형','스토퍼','슬림형','와이드형','무메','목재'].some(function(k){ return s.includes(k); })) return 'FRAME';
   return 'DOOR';
 }
 
