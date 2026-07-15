@@ -434,23 +434,45 @@ function 생성_품목코드_문틀_내부() {
   if (!sheet) throw new Error('시트 없음');
   var start = CONFIG.START_ROW, num = CONFIG.END_ROW - start + 1;
   var data = sheet.getRange(start, CONFIG.COLS.AP, num, CONFIG.COLS.AY - CONFIG.COLS.AP + 1).getValues();
-  var names = [], codes = [], empty = [], units = [];
+  var names = [], codes = [], empty = [], units = [], bgVals = [], bhVals = [], bjVals = [], bkVals = [];
   var 성공 = 0, 실패 = 0;
   for (var i = 0; i < num; i++) {
     var row = data[i], rIdx = start + i;
-    if (!row[4]) { names.push([""]); codes.push([""]); empty.push([""]); units.push([""]); 실패++; continue; }
+    if (!row[4]) { names.push([""]); codes.push([""]); empty.push([""]); units.push([""]); bgVals.push([""]); bhVals.push([""]); bjVals.push([""]); bkVals.push([""]); 실패++; continue; }
     var _p = parseAT(row[4]);
-    if (Math.max(추출_숫자_from문자열(row[3]), _p.width, _p.height) <= 499) { names.push([""]); codes.push([""]); empty.push([""]); units.push([""]); 실패++; continue; }
+    if (Math.max(추출_숫자_from문자열(row[3]), _p.width, _p.height) <= 499) { names.push([""]); codes.push([""]); empty.push([""]); units.push([""]); bgVals.push([""]); bhVals.push([""]); bjVals.push([""]); bkVals.push([""]); 실패++; continue; }
     try {
       var n = 생성_품목명(row[0], row[5], row[6], row[3], _p.width, _p.height, row[1], rIdx);
       var c = 생성_품목코드_NEW(row[0], row[5], row[6], row[3], _p.width, _p.height, row[1], rIdx);
-      names.push([n]); codes.push([c]); empty.push([""]); units.push([rIdx >= CONFIG.DOOR_START ? "짝" : "틀"]); 성공++;
-    } catch (e) { names.push([""]); codes.push([""]); empty.push([""]); units.push([""]); 실패++; }
+      var bg = "", bh = "", bj = "", bk = "";
+      var ap = row[0] ? row[0].toString().trim() : "";
+      var asNum = 추출_숫자_from문자열(row[3]);
+      var color = 색상_전처리(row[5], row[6]);
+      var finalColor = color && color.startsWith("영림") ? color : "영림" + color;
+      var bc = 브랜드색상코드_생성(row[5], row[6]);
+      if (ap === "영림ㅣ발포ㅣ와이드ㅣ12T(MDF)") {
+        bg = finalColor + " MDF 프레임몰딩 " + asNum + "바";
+        bh = bc + "PM" + asNum;
+        bj = "EA";
+        bk = "주문재";
+      } else if (ap === "영림ㅣ발포ㅣ와이드ㅣ9T(PVC)") {
+        bg = finalColor + " PVC 프레임몰딩 " + asNum + "바";
+        bh = bc + "PP" + asNum;
+        bj = "EA";
+        bk = "주문재";
+      }
+      names.push([n]); codes.push([c]); empty.push([""]); units.push([rIdx >= CONFIG.DOOR_START ? "짝" : "틀"]);
+      bgVals.push([bg]); bhVals.push([bh]); bjVals.push([bj]); bkVals.push([bk]); 성공++;
+    } catch (e) { names.push([""]); codes.push([""]); empty.push([""]); units.push([""]); bgVals.push([""]); bhVals.push([""]); bjVals.push([""]); bkVals.push([""]); 실패++; }
   }
   sheet.getRange(start, 53, num, 1).setValues(names);
   sheet.getRange(start, 54, num, 1).setValues(codes);
   sheet.getRange(start, 55, num, 1).setValues(empty);
   sheet.getRange(start, 56, num, 1).setValues(units);
+  sheet.getRange(start, 59, num, 1).setValues(bgVals);
+  sheet.getRange(start, 60, num, 1).setValues(bhVals);
+  sheet.getRange(start, 62, num, 1).setValues(bjVals);
+  sheet.getRange(start, 63, num, 1).setValues(bkVals);
   return { 성공: 성공, 실패: 실패 };
 }
 
@@ -511,16 +533,24 @@ function 브랜드색상코드_생성(aw, ax) {
 function 플래그코드_생성(ap) {
   var s = ap.toString().replace(/^영림ㅣ/, '').split('ㅣ').map(function(k){ return k.replace(/형/g, '').trim(); });
   var yNum = null; s.forEach(function(k){ var m = k.match(/(\d+)연동/); if(m) yNum = m[1]; });
-  var head = "", headMap = {"발포":"B","방염":"F","비방염":"N","알루미늄":"A"};
+  var head = "", headMap = {"발포":"B","방염":"F","비방염":"N","알루미늄":"A","프레임몰딩":"P"};
   for(var k in headMap) { if(s.indexOf(k)!==-1) { head = headMap[k]; break; } }
   var tail = "", tailMap = {"슬림":"S","와이드":"W","분리":"D","히든":"H","미서기":"L"};
-  for(var k in tailMap) { if(s.indexOf(k)!==-1) tail += tailMap[k]; }
-  var hasMDFSpec = s.some(function(k){ return k === '12T(MDF)' || k === '9T(PVC)'; });
-  if (head === 'B' && tail.indexOf('S') !== -1 && hasMDFSpec) tail = tail.replace('S', 'W');
-  return head + tail;
+  for(var k in tailMap) {
+    if(s.some(function(t){ return t.indexOf(k) !== -1; })) tail += tailMap[k];
+  }
+  if(head === "P") {
+    if(s.indexOf("PVC") !== -1) tail += "P";
+    if(s.indexOf("MDF") !== -1) tail += "M";
+  }
+  var wood = s.indexOf("목재") !== -1 ? "W" : "";
+  return wood + head + tail;
 }
 
-function 규격코드_생성(as, at, av, aq) { return 추출_숫자_from문자열(as) + (at ? at.toString() : "") + (av ? av.toString() : "") + (aq && aq.toString().includes("3방") ? "N" : (aq && aq.toString().includes("4방") ? "Y" : "")); }
+function 규격코드_생성(as, at, av, aq) {
+  var asNum = 추출_숫자_from문자열(as);
+  return asNum + (at ? at.toString() : "") + (av ? av.toString() : "") + (aq && aq.toString().includes("3방") ? "N" : (aq && aq.toString().includes("4방") ? "Y" : ""));
+}
 
 function 구분_품목타입(itemName, row) { 
   if (row >= CONFIG.DOOR_START && row <= CONFIG.DOOR_END) return 'DOOR';
@@ -558,7 +588,7 @@ function setASDropdown(sheet, row, apValue) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet(), testSheet = ss.getSheetByName(CONFIG.TEST_SHEET_NAME);
     var asCell = sheet.getRange(row, CONFIG.COLS.AS); if (!testSheet) return;
-    var headers = testSheet.getRange("A1:G1").getValues()[0], apStr = apValue ? apValue.toString().toUpperCase() : "";
+    var headers = testSheet.getRange("A1:L1").getValues()[0], apStr = apValue ? apValue.toString().toUpperCase() : "";
     if (!apStr) { asCell.clearDataValidations(); return; }
     var matchCol = -1;
     for (var c = 0; c < headers.length; c++) { var h = headers[c] ? headers[c].toString().toUpperCase().trim() : ""; if (h && apStr.includes(h)) { matchCol = c; break; } }
