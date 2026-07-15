@@ -506,6 +506,14 @@ function 색상_전처리(aw, ax) {
 
 function 품명_전처리(ap) {
   if (!ap) return "";
+  var fixedMap = {
+    "히든ㅣ목문틀": "히든도어 전용문틀",
+    "히든ㅣ알루미늄 문틀": "히든 알루미늄 문틀",
+    "스텝도어ㅣ전용문틀": "스텝도어 전용문틀"
+  };
+  for (var k in fixedMap) {
+    if (ap.includes(k)) return fixedMap[k];
+  }
   var raw = ap.toString();
   var result = raw.replace(/^영림ㅣ/, '').replace(/ㅣ/g, ' ').replace(/문틀|형/g, '').replace(/\d+바/g, '').replace(/\(식기[XO]\)/g, '').trim().replace(/\s+/g, ' ');
   if (raw.includes('발포') && raw.includes('슬림') && (raw.includes('12T(MDF)') || raw.includes('9T(PVC)'))) result = result.replace('슬림', '와이드');
@@ -640,6 +648,7 @@ function onEdit(e) {
     var r = e.range, s = r.getSheet(); if (s.getName() !== CONFIG.SHEET_NAME) return;
     var rowS = r.getRow(), colS = r.getColumn(), val = r.getValue();
     if (r.getA1Notation() === "AY2" && val === true) { 생성_품목코드_문틀(); r.setValue(false); return; }
+    if (colS === CONFIG.COLS.AT && rowS <= 49 && r.getLastRow() >= 31) { 생성_문틀치수_히든(); }
     if (colS === (CONFIG.COLS.AZ || 52) && rowS >= 12 && rowS <= 30) { 생성_문짝치수(); }
     if (colS === CONFIG.COLS.AP) { for (var i = rowS; i <= r.getLastRow(); i++) if (i >= CONFIG.START_ROW && i <= CONFIG.FRAME_END) setASDropdown(s, i, r.getValue()); }
     if (colS === CONFIG.COLS.AU || colS === CONFIG.COLS.AT) {
@@ -734,6 +743,48 @@ function 진단_문짝치수() {
 
   Logger.log(log);
   SpreadsheetApp.getUi().alert("진단 완료! 로그(Ctrl+Enter)를 확인해 주세요.");
+}
+
+/**
+ * [히든 문틀] 문짝치수(AT31:AT49)로 문틀치수(AT12:AT30) 생성
+ * 문짝행의 AZ값을 추가 차감한다.
+ */
+function 생성_문틀치수_히든() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
+  if (!sheet) return;
+
+  var frameStartRow = 12;
+  var doorStartRow = 31;
+  var numRows = 19;
+
+  var frameApValues = sheet.getRange(frameStartRow, CONFIG.COLS.AP, numRows, 1).getValues();
+  var frameAtRange = sheet.getRange(frameStartRow, CONFIG.COLS.AT, numRows, 1);
+  var frameAtValues = frameAtRange.getValues();
+  var doorAtValues = sheet.getRange(doorStartRow, CONFIG.COLS.AT, numRows, 1).getValues();
+  var doorAzValues = sheet.getRange(doorStartRow, (CONFIG.COLS.AZ || 52), numRows, 1).getValues();
+
+  var results = frameAtValues.map(function(row) { return [row[0]]; });
+
+  for (var i = 0; i < numRows; i++) {
+    var ap = frameApValues[i][0] ? frameApValues[i][0].toString() : "";
+    var isAluminumHidden = ap.includes("히든ㅣ알루미늄 문틀");
+    var isWoodHidden = ap.includes("히든ㅣ목문틀");
+    if (!isAluminumHidden && !isWoodHidden) continue;
+
+    var parsed = parseAT(doorAtValues[i][0]);
+    if (parsed.width === 0 || parsed.height === 0) {
+      results[i][0] = "";
+      continue;
+    }
+
+    var az = Number(doorAzValues[i][0]) || 0;
+    var widthOffset = isAluminumHidden ? 104 : 88;
+    var heightOffset = isAluminumHidden ? 48 : 40;
+    results[i][0] = (parsed.width - widthOffset) + "*" + (parsed.height - heightOffset - az);
+  }
+
+  frameAtRange.setValues(results);
 }
 
 /**
