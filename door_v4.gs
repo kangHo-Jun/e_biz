@@ -835,7 +835,7 @@ function 생성_문짝치수() {
     } else if (ap.indexOf("스텝도어 확장형") !== -1) {
       finalW = parsed.width - 68;
       finalH = parsed.height - az;
-      results.push([finalW + "*" + finalH + (ba === "" || ba === null || ba === undefined ? "" : "*" + ba)]);
+      results.push([finalW + "*" + finalH]);
     } else if (ap.indexOf("스텝도어") !== -1) {
       finalW = parsed.width - 68;
       finalH = parsed.height - az + 15;
