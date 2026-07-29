@@ -257,7 +257,7 @@ const CONFIG = {
   DOOR_END: 42,
   COLS: {
     AP: 42, AQ: 43, AR: 44, AS: 45, AT: 46, AU: 47, AV: 48, AY: 51, AZ: 52,
-    BA: 54, BB: 55, BC: 56, BD: 57, BG: 60, BH: 61, BJ: 63, BK: 64
+    BA: 53, BB: 54, BC: 55, BD: 56, BE: 57, BG: 60, BH: 61, BJ: 63, BK: 64
     // AU=색상명, AV=색상코드, AY=가스켓, AZ=숫자 (셀병합 후 실제 열 문자 기준)
   }
 };
@@ -466,10 +466,10 @@ function 생성_품목코드_문틀_내부() {
       bgVals.push([bg]); bhVals.push([bh]); bjVals.push([bj]); bkVals.push([bk]); 성공++;
     } catch (e) { names.push([""]); codes.push([""]); empty.push([""]); units.push([""]); bgVals.push([""]); bhVals.push([""]); bjVals.push([""]); bkVals.push([""]); 실패++; }
   }
-  sheet.getRange(start, CONFIG.COLS.BA, num, 1).setValues(names);
-  sheet.getRange(start, CONFIG.COLS.BB, num, 1).setValues(codes);
-  sheet.getRange(start, CONFIG.COLS.BC, num, 1).setValues(empty);
-  sheet.getRange(start, CONFIG.COLS.BD, num, 1).setValues(units);
+  sheet.getRange(start, CONFIG.COLS.BB, num, 1).setValues(names);
+  sheet.getRange(start, CONFIG.COLS.BC, num, 1).setValues(codes);
+  sheet.getRange(start, CONFIG.COLS.BD, num, 1).setValues(empty);
+  sheet.getRange(start, CONFIG.COLS.BE, num, 1).setValues(units);
   sheet.getRange(start, CONFIG.COLS.BG, num, 1).setValues(bgVals);
   sheet.getRange(start, CONFIG.COLS.BH, num, 1).setValues(bhVals);
   sheet.getRange(start, CONFIG.COLS.BJ, num, 1).setValues(bjVals);
