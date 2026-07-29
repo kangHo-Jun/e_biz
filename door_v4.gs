@@ -800,16 +800,20 @@ function 생성_문짝치수() {
   var numRows = endRow - startRow + 1;
   var outputStartRow = 31;
 
+  var dataAP = sheet.getRange(startRow, CONFIG.COLS.AP, numRows, 1).getValues();
   var dataAQ = sheet.getRange(startRow, CONFIG.COLS.AQ, numRows, 1).getValues();
   var dataAT = sheet.getRange(startRow, CONFIG.COLS.AT, numRows, 1).getValues();
   var dataAZ = sheet.getRange(startRow, (CONFIG.COLS.AZ || 52), numRows, 1).getValues();
+  var dataBA = sheet.getRange(startRow, CONFIG.COLS.BA, numRows, 1).getValues();
 
   var results = [];
 
   for (var i = 0; i < numRows; i++) {
+    var ap = dataAP[i][0] ? dataAP[i][0].toString().trim() : "";
     var aq = dataAQ[i][0] ? dataAQ[i][0].toString().trim() : "";
     var atRaw = dataAT[i][0];
     var az = Number(dataAZ[i][0]) || 0;
+    var ba = dataBA[i][0];
     var parsed = parseAT(atRaw);
 
     if (parsed.width === 0 || parsed.height === 0) {
@@ -817,13 +821,31 @@ function 생성_문짝치수() {
       continue;
     }
 
-    var finalW = parsed.width - 68;
+    var finalW = "";
     var finalH = "";
 
-    if (aq === "4방" || (aq === "3방" && (dataAZ[i][0] === "" || dataAZ[i][0] === null || dataAZ[i][0] === undefined))) {
+    if (ap.indexOf("히든ㅣ알루미늄 문틀") !== -1) {
+      finalW = parsed.width - 104;
+      finalH = parsed.height - 48 - az;
+      results.push([finalW + "*" + finalH]);
+    } else if (ap.indexOf("히든ㅣ목문틀") !== -1) {
+      finalW = parsed.width - 88;
+      finalH = parsed.height - 40 - az;
+      results.push([finalW + "*" + finalH]);
+    } else if (ap.indexOf("스텝도어 확장형") !== -1) {
+      finalW = parsed.width - 68;
+      finalH = parsed.height - az;
+      results.push([finalW + "*" + finalH + (ba === "" || ba === null || ba === undefined ? "" : "*" + ba)]);
+    } else if (ap.indexOf("스텝도어") !== -1) {
+      finalW = parsed.width - 68;
+      finalH = parsed.height - az + 15;
+      results.push([finalW + "*" + finalH + (ba === "" || ba === null || ba === undefined ? "" : "*" + ba)]);
+    } else if (aq === "4방" || (aq === "3방" && (dataAZ[i][0] === "" || dataAZ[i][0] === null || dataAZ[i][0] === undefined))) {
+      finalW = parsed.width - 68;
       finalH = parsed.height - 65;
       results.push([finalW + "*" + finalH]);
     } else if (aq === "3방") {
+      finalW = parsed.width - 68;
       finalH = parsed.height - (30 + az);
       results.push([finalW + "*" + finalH]);
     } else {
